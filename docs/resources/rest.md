@@ -1,0 +1,77 @@
+---
+page_title: "aci_rest Resource - terraform-provider-aci"
+subcategory: ""
+description: |-
+  Manages ACI Model Objects via REST API calls. This resource can only manage a single API object and its direct children. It is able to read the state and therefore reconcile configuration drift.
+---
+
+# Resource `aci_rest`
+
+Manages ACI Model Objects via REST API calls. This resource can only manage a single API object and its direct children. It is able to read the state and therefore reconcile configuration drift.
+
+## Example Usage
+
+```terraform
+resource "aci_rest" "fvTenant" {
+  dn         = "uni/tn-EXAMPLE_TENANT"
+  class_name = "fvTenant"
+  content = {
+    name  = "EXAMPLE_TENANT"
+    descr = "Example description"
+  }
+}
+
+resource "aci_rest" "mgmtConnectivityPrefs" {
+  dn         = "uni/fabric/connectivityPrefs"
+  class_name = "mgmtConnectivityPrefs"
+  content = {
+    interfacePref = "ooband"
+  }
+}
+
+resource "aci_rest" "fvTenant" {
+  dn         = "uni/tn-EXAMPLE_TENANT"
+  class_name = "fvTenant"
+  content = {
+    name = "EXAMPLE_TENANT"
+  }
+
+  child {
+    rn         = "ctx-VRF1"
+    class_name = "fvCtx"
+    content = {
+      name = "VRF1"
+    }
+  }
+}
+```
+
+## Schema
+
+### Required
+
+- **class_name** (String) Which class object is being created. (Make sure there is no colon in the classname)
+- **dn** (String) Distinguished name of object being managed including its relative name, e.g. uni/tn-EXAMPLE_TENANT.
+
+### Optional
+
+- **child** (Block List) List of children. (see [below for nested schema](#nestedblock--child))
+- **content** (Map of String) Map of key-value pairs those needed to be passed to the Model object as parameters. Make sure the key name matches the name with the object parameter in ACI.
+
+### Read-only
+
+- **id** (String) The distinguished name of the object.
+
+<a id="nestedblock--child"></a>
+### Nested Schema for `child`
+
+Required:
+
+- **rn** (String) The relative name of the child object.
+
+Optional:
+
+- **class_name** (String) Class name of child object.
+- **content** (Map of String) Map of key-value pairs which represents the attributes for the child object.
+
+

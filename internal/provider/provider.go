@@ -1,0 +1,148 @@
+package provider
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/ciscoecosystem/aci-go-client/client"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+func init() {
+	// Set descriptions to support markdown syntax, this will be used in document generation
+	// and the language server.
+	schema.DescriptionKind = schema.StringMarkdown
+
+	// Customize the content of descriptions when output. For example you can add defaults on
+	// to the exported descriptions if present.
+	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
+		desc := s.Description
+		if s.Default != nil {
+			desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
+		}
+		return strings.TrimSpace(desc)
+	}
+}
+
+func New(version string) func() *schema.Provider {
+	return func() *schema.Provider {
+		p := &schema.Provider{
+			Schema: map[string]*schema.Schema{
+				"username": {
+					Type:        schema.TypeString,
+					Required:    true,
+					DefaultFunc: schema.EnvDefaultFunc("ACI_USERNAME", nil),
+					Description: "Username for the APIC Account. This can also be set as the ACI_USERNAME environment variable.",
+				},
+				"password": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("ACI_PASSWORD", nil),
+					Description: "Password for the APIC Account. This can also be set as the ACI_PASSWORD environment variable.",
+				},
+				"url": {
+					Type:        schema.TypeString,
+					Required:    true,
+					DefaultFunc: schema.EnvDefaultFunc("ACI_URL", nil),
+					Description: "URL of the Cisco ACI web interface. This can also be set as the ACI_URL environment variable.",
+				},
+				"insecure": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Default:     true,
+					Description: "Allow insecure HTTPS client.",
+				},
+				"private_key": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("ACI_PRIVATE_KEY", nil),
+					Description: "Private key path for signature calculation. This can also be set as the ACI_PRIVATE_KEY environment variable.",
+				},
+				"cert_name": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("ACI_CERT_NAME", nil),
+					Description: "Certificate name for the User in Cisco ACI. This can also be set as the ACI_CERT_NAME environment variable.",
+				},
+				"proxy_url": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("ACI_PROXY_URL", nil),
+					Description: "Proxy Server URL with port number. This can also be set as the ACI_PROXY_URL environment variable.",
+				},
+			},
+			DataSourcesMap: map[string]*schema.Resource{
+				"aci_rest": dataSourceAciRest(),
+			},
+			ResourcesMap: map[string]*schema.Resource{
+				"aci_rest": resourceAciRest(),
+			},
+		}
+
+		p.ConfigureContextFunc = configure(version, p)
+
+		return p
+	}
+}
+
+type apiClient struct {
+	Username   string
+	Password   string
+	URL        string
+	IsInsecure bool
+	PrivateKey string
+	Certname   string
+	ProxyUrl   string
+}
+
+func (c apiClient) Valid() diag.Diagnostics {
+
+	if c.Username == "" {
+		return diag.FromErr(fmt.Errorf("Username must be provided for the ACI provider"))
+	}
+
+	if c.Password == "" {
+		if c.PrivateKey == "" && c.Certname == "" {
+
+			return diag.FromErr(fmt.Errorf("Either of private_key/cert_name or password is required"))
+		} else if c.PrivateKey == "" || c.Certname == "" {
+			return diag.FromErr(fmt.Errorf("private_key and cert_name both must be provided"))
+		}
+	}
+
+	if c.URL == "" {
+		return diag.FromErr(fmt.Errorf("The URL must be provided for the ACI provider"))
+	}
+
+	return nil
+}
+
+func (c apiClient) getClient() interface{} {
+	if c.Password != "" {
+		return client.GetClient(c.URL, c.Username, client.Password(c.Password), client.Insecure(c.IsInsecure), client.ProxyUrl(c.ProxyUrl))
+	} else {
+		return client.GetClient(c.URL, c.Username, client.PrivateKey(c.PrivateKey), client.AdminCert(c.Certname), client.Insecure(c.IsInsecure), client.ProxyUrl(c.ProxyUrl))
+	}
+}
+
+func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	return func(c context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		client := apiClient{
+			Username:   d.Get("username").(string),
+			Password:   d.Get("password").(string),
+			URL:        d.Get("url").(string),
+			IsInsecure: d.Get("insecure").(bool),
+			PrivateKey: d.Get("private_key").(string),
+			Certname:   d.Get("cert_name").(string),
+			ProxyUrl:   d.Get("proxy_url").(string),
+		}
+
+		if diag := client.Valid(); diag != nil {
+			return nil, diag
+		}
+
+		return client.getClient(), nil
+	}
+}

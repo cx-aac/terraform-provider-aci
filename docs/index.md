@@ -1,0 +1,33 @@
+
+---
+layout: ""
+page_title: "Provider: ACI"
+description: |-
+  The ACI provider provides resources to interact with a Cisco ACI fabric.
+---
+
+# ACI Provider
+
+The ACI provider provides resources to interact with a Cisco ACI fabric.
+
+## Example Usage
+
+```terraform
+provider "aci" {
+  username = "admin"
+  password = "password"
+  url      = "https://10.1.1.1"
+}
+```
+
+## Schema
+
+### Optional
+
+- **cert_name** (String) Certificate name for the User in Cisco ACI. This can also be set as the ACI_CERT_NAME environment variable.
+- **insecure** (Boolean) Allow insecure HTTPS client. Defaults to `true`.
+- **password** (String) Password for the APIC Account. This can also be set as the ACI_PASSWORD environment variable.
+- **private_key** (String) Private key path for signature calculation. This can also be set as the ACI_PRIVATE_KEY environment variable.
+- **proxy_url** (String) Proxy Server URL with port number. This can also be set as the ACI_PROXY_URL environment variable.
+- **url** (String) URL of the Cisco ACI web interface. This can also be set as the ACI_URL environment variable.
+- **username** (String) Username for the APIC Account. This can also be set as the ACI_USERNAME environment variable.
