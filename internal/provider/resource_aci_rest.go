@@ -44,15 +44,14 @@ func resourceAciRest() *schema.Resource {
 				Computed:    true,
 			},
 			"child": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "List of children.",
 				Optional:    true,
-				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"rn": {
-							Description: "The relative name of the child object.",
 							Type:        schema.TypeString,
+							Description: "The relative name of the child object.",
 							Required:    true,
 						},
 						"class_name": {
@@ -94,7 +93,7 @@ func getAciRest(d *schema.ResourceData, c *container.Container) diag.Diagnostics
 	d.Set("content", newContent)
 
 	newChildrenSet := make([]interface{}, 0, 1)
-	for _, child := range d.Get("child").([]interface{}) {
+	for _, child := range d.Get("child").(*schema.Set).List() {
 		newChildMap := make(map[string]interface{})
 		childRn := child.(map[string]interface{})["rn"].(string)
 		childClassName := child.(map[string]interface{})["class_name"].(string)
@@ -169,7 +168,7 @@ func resourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	for attempts := 0; ; attempts++ {
 		getChildren := false
-		if len(d.Get("child").([]interface{})) > 0 {
+		if len(d.Get("child").(*schema.Set).List()) > 0 {
 			getChildren = true
 		}
 		cont, diags := ApicRest(d, meta, "GET", getChildren)

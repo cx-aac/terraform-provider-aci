@@ -25,7 +25,7 @@ func ApicRest(d *schema.ResourceData, meta interface{}, method string, children 
 
 		childrenSet := make([]interface{}, 0, 1)
 
-		for _, child := range d.Get("child").([]interface{}) {
+		for _, child := range d.Get("child").(*schema.Set).List() {
 			childMap := make(map[string]interface{})
 			childClassName := child.(map[string]interface{})["class_name"]
 			childContent := child.(map[string]interface{})["content"]
