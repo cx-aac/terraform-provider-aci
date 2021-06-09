@@ -55,7 +55,7 @@ resource "aci_rest" "fvTenant" {
 
 ### Optional
 
-- **child** (Block List) List of children. (see [below for nested schema](#nestedblock--child))
+- **child** (Block Set) List of children. (see [below for nested schema](#nestedblock--child))
 - **content** (Map of String) Map of key-value pairs those needed to be passed to the Model object as parameters. Make sure the key name matches the name with the object parameter in ACI.
 
 ### Read-only
