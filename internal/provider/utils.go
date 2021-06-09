@@ -1,16 +1,8 @@
 package provider
 
 import (
-	"math"
-	"math/rand"
-	"time"
-
 	"github.com/ciscoecosystem/aci-go-client/container"
 )
-
-const Retries = 3
-const Factor = 2
-const MinDelay = 4 * time.Second
 
 func toStrMap(inputMap map[string]interface{}) map[string]string {
 	rt := make(map[string]string)
@@ -45,15 +37,4 @@ func preparePayload(className string, inputMap map[string]string, children []int
 		cont.ArrayAppend(childCont.Data(), className, "children")
 	}
 	return cont, nil
-}
-
-func backoff(attempts int) bool {
-	if attempts >= Retries {
-		return false
-	}
-	min := float64(MinDelay)
-	backoff := min * math.Pow(Factor, float64(attempts))
-	backoff = rand.Float64()*(backoff-min) + min
-	time.Sleep(time.Duration(backoff))
-	return true
 }
