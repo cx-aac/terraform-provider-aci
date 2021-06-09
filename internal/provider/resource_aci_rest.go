@@ -127,43 +127,7 @@ func getAciRest(d *schema.ResourceData, c *container.Container) diag.Diagnostics
 	return nil
 }
 
-func resourceAciRestCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: Beginning Create", d.Id())
-
-	for attempts := 0; ; attempts++ {
-		_, diags := ApicRest(d, meta, "POST", false)
-		if !diags.HasError() {
-			break
-		}
-		if ok := backoff(attempts); !ok {
-			return diags
-		}
-		log.Printf("[ERROR] Failed to create object: %s, retries: %v", diags[0].Summary, attempts)
-	}
-
-	log.Printf("[DEBUG] %s: Create finished successfully", d.Id())
-	return resourceAciRestRead(ctx, d, meta)
-}
-
-func resourceAciRestUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: Beginning Update", d.Id())
-
-	for attempts := 0; ; attempts++ {
-		_, diags := ApicRest(d, meta, "POST", false)
-		if !diags.HasError() {
-			break
-		}
-		if ok := backoff(attempts); !ok {
-			return diags
-		}
-		log.Printf("[ERROR] Failed to update object: %s, retries: %v", diags[0].Summary, attempts)
-	}
-
-	log.Printf("[DEBUG] %s: Update finished successfully", d.Id())
-	return resourceAciRestRead(ctx, d, meta)
-}
-
-func resourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceAciRestReadHelper(ctx context.Context, d *schema.ResourceData, meta interface{}, expectObject bool) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: Beginning Read", d.Id())
 
 	for attempts := 0; ; attempts++ {
@@ -181,7 +145,7 @@ func resourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		// Check if we received an empty response without errors -> object has been deleted
-		if cont == nil && diags == nil {
+		if cont == nil && diags == nil && !expectObject {
 			d.SetId("")
 			return nil
 		}
@@ -198,6 +162,46 @@ func resourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("[DEBUG] %s: Read finished successfully", d.Id())
 	return nil
+}
+
+func resourceAciRestCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[DEBUG] %s: Beginning Create", d.Id())
+
+	for attempts := 0; ; attempts++ {
+		_, diags := ApicRest(d, meta, "POST", false)
+		if !diags.HasError() {
+			break
+		}
+		if ok := backoff(attempts); !ok {
+			return diags
+		}
+		log.Printf("[ERROR] Failed to create object: %s, retries: %v", diags[0].Summary, attempts)
+	}
+
+	log.Printf("[DEBUG] %s: Create finished successfully", d.Id())
+	return resourceAciRestReadHelper(ctx, d, meta, true)
+}
+
+func resourceAciRestUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[DEBUG] %s: Beginning Update", d.Id())
+
+	for attempts := 0; ; attempts++ {
+		_, diags := ApicRest(d, meta, "POST", false)
+		if !diags.HasError() {
+			break
+		}
+		if ok := backoff(attempts); !ok {
+			return diags
+		}
+		log.Printf("[ERROR] Failed to update object: %s, retries: %v", diags[0].Summary, attempts)
+	}
+
+	log.Printf("[DEBUG] %s: Update finished successfully", d.Id())
+	return resourceAciRestReadHelper(ctx, d, meta, true)
+}
+
+func resourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceAciRestReadHelper(ctx, d, meta, false)
 }
 
 func resourceAciRestDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
