@@ -1,4 +1,4 @@
-module github.com/cx-aac/terraform-provider-aci
+module github.com/netascode/terraform-provider-aci
 
 go 1.16
 

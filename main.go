@@ -5,8 +5,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/cx-aac/terraform-provider-aci/internal/provider"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/netascode/terraform-provider-aci/internal/provider"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website
@@ -37,7 +37,7 @@ func main() {
 	opts := &plugin.ServeOpts{ProviderFunc: provider.New(version)}
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/cx-aac/aci", opts)
+		err := plugin.Debug(context.Background(), "registry.terraform.io/netascode/aci", opts)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
