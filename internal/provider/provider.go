@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ciscoecosystem/aci-go-client/client"
@@ -49,10 +51,15 @@ func New(version string) func() *schema.Provider {
 					Description: "URL of the Cisco ACI web interface. This can also be set as the ACI_URL environment variable.",
 				},
 				"insecure": {
-					Type:        schema.TypeBool,
-					Optional:    true,
-					Default:     true,
-					Description: "Allow insecure HTTPS client.",
+					Type:     schema.TypeBool,
+					Optional: true,
+					DefaultFunc: func() (interface{}, error) {
+						if v := os.Getenv("ACI_INSECURE"); v != "" {
+							return strconv.ParseBool(v)
+						}
+						return true, nil
+					},
+					Description: "Allow insecure HTTPS client. This can also be set as the ACI_INSECURE environment variable. Defaults to `true`.",
 				},
 				"private_key": {
 					Type:        schema.TypeString,
@@ -71,6 +78,24 @@ func New(version string) func() *schema.Provider {
 					Optional:    true,
 					DefaultFunc: schema.EnvDefaultFunc("ACI_PROXY_URL", nil),
 					Description: "Proxy Server URL with port number. This can also be set as the ACI_PROXY_URL environment variable.",
+				},
+				"retries": {
+					Type:     schema.TypeInt,
+					Optional: true,
+					DefaultFunc: func() (interface{}, error) {
+						if v := os.Getenv("ACI_RETRIES"); v != "" {
+							return strconv.Atoi(v)
+						}
+						return 3, nil
+					},
+					ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+						v := val.(int)
+						if v < 0 || v > 9 {
+							errs = append(errs, fmt.Errorf("%q must be between 0 and 9 inclusive, got: %d", key, v))
+						}
+						return
+					},
+					Description: "Number of retries for REST API calls. This can also be set as the ACI_RETRIES environment variable. Defaults to `3`.",
 				},
 			},
 			DataSourcesMap: map[string]*schema.Resource{
@@ -95,6 +120,8 @@ type apiClient struct {
 	PrivateKey string
 	Certname   string
 	ProxyUrl   string
+	Retries    int
+	Client     *client.Client
 }
 
 func (c apiClient) Valid() diag.Diagnostics {
@@ -129,7 +156,7 @@ func (c apiClient) getClient() interface{} {
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(c context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		client := apiClient{
+		cl := apiClient{
 			Username:   d.Get("username").(string),
 			Password:   d.Get("password").(string),
 			URL:        d.Get("url").(string),
@@ -137,12 +164,15 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 			PrivateKey: d.Get("private_key").(string),
 			Certname:   d.Get("cert_name").(string),
 			ProxyUrl:   d.Get("proxy_url").(string),
+			Retries:    d.Get("retries").(int),
 		}
 
-		if diag := client.Valid(); diag != nil {
+		if diag := cl.Valid(); diag != nil {
 			return nil, diag
 		}
 
-		return client.getClient(), nil
+		cl.Client = cl.getClient().(*client.Client)
+
+		return cl, nil
 	}
 }

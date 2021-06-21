@@ -26,9 +26,10 @@ provider "aci" {
 ### Optional
 
 - **cert_name** (String) Certificate name for the User in Cisco ACI. This can also be set as the ACI_CERT_NAME environment variable.
-- **insecure** (Boolean) Allow insecure HTTPS client. Defaults to `true`.
+- **insecure** (Boolean) Allow insecure HTTPS client. This can also be set as the ACI_INSECURE environment variable. Defaults to `true`.
 - **password** (String) Password for the APIC Account. This can also be set as the ACI_PASSWORD environment variable.
 - **private_key** (String) Private key path for signature calculation. This can also be set as the ACI_PRIVATE_KEY environment variable.
 - **proxy_url** (String) Proxy Server URL with port number. This can also be set as the ACI_PROXY_URL environment variable.
+- **retries** (Number) Number of retries for REST API calls. This can also be set as the ACI_RETRIES environment variable. Defaults to `3`.
 - **url** (String) URL of the Cisco ACI web interface. This can also be set as the ACI_URL environment variable.
 - **username** (String) Username for the APIC Account. This can also be set as the ACI_USERNAME environment variable.

@@ -65,7 +65,7 @@ func dataSourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta int
 	for attempts := 0; ; attempts++ {
 		cont, diags := ApicRest(d, meta, "GET", true)
 		if diags.HasError() {
-			if ok := backoff(attempts); !ok {
+			if ok := backoff(attempts, meta.(apiClient).Retries); !ok {
 				return diags
 			}
 			log.Printf("[ERROR] Failed to read object: %s, retries: %v", diags[0].Summary, attempts)
@@ -100,7 +100,7 @@ func dataSourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta int
 			children := obj.Search("children")
 			childCount, err := children.ArrayCount()
 			if err != nil {
-				if ok := backoff(attempts); !ok {
+				if ok := backoff(attempts, meta.(apiClient).Retries); !ok {
 					return diag.FromErr(err)
 				}
 				log.Printf("[ERROR] Failed to decode response after reading object: %s, retries: %v", diags[0].Summary, attempts)

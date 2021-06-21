@@ -9,7 +9,7 @@ import (
 )
 
 func ApicRest(d *schema.ResourceData, meta interface{}, method string, children bool) (*container.Container, diag.Diagnostics) {
-	aciClient := meta.(*client.Client)
+	aciClient := meta.(apiClient).Client
 	path := "/api/mo/" + d.Get("dn").(string) + ".json"
 	if method == "GET" && children {
 		path += "?rsp-subtree=children"
