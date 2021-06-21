@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ciscoecosystem/aci-go-client/client"
 	"github.com/ciscoecosystem/aci-go-client/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -161,7 +160,7 @@ func testAccCheckAciRestObject(name string) resource.TestCheckFunc {
 			return fmt.Errorf("No aci_rest dn attribute was set")
 		}
 
-		client := testAccProvider.Meta().(*client.Client)
+		client := testAccProvider.Meta().(apiClient).Client
 
 		cont, err := client.Get(rs.Primary.ID)
 		if err != nil {
@@ -190,7 +189,7 @@ func testAccCheckAciRestObject(name string) resource.TestCheckFunc {
 }
 
 func testAccCheckAciRestDestroy(s *terraform.State) error {
-	client := testAccProvider.Meta().(*client.Client)
+	client := testAccProvider.Meta().(apiClient).Client
 
 	for _, rs := range s.RootModule().Resources {
 
@@ -209,7 +208,7 @@ func testAccCheckAciRestDestroy(s *terraform.State) error {
 }
 
 func testAccCheckAciRestStillExists(s *terraform.State) error {
-	client := testAccProvider.Meta().(*client.Client)
+	client := testAccProvider.Meta().(apiClient).Client
 
 	for _, rs := range s.RootModule().Resources {
 

@@ -137,7 +137,7 @@ func resourceAciRestReadHelper(ctx context.Context, d *schema.ResourceData, meta
 		}
 		cont, diags := ApicRest(d, meta, "GET", getChildren)
 		if diags.HasError() {
-			if ok := backoff(attempts); !ok {
+			if ok := backoff(attempts, meta.(apiClient).Retries); !ok {
 				return diags
 			}
 			log.Printf("[ERROR] Failed to read object: %s, retries: %v", diags[0].Summary, attempts)
@@ -154,7 +154,7 @@ func resourceAciRestReadHelper(ctx context.Context, d *schema.ResourceData, meta
 		if !diags.HasError() {
 			break
 		}
-		if ok := backoff(attempts); !ok {
+		if ok := backoff(attempts, meta.(apiClient).Retries); !ok {
 			return diags
 		}
 		log.Printf("[ERROR] Failed to decode response after reading object: %s, retries: %v", diags[0].Summary, attempts)
@@ -172,7 +172,7 @@ func resourceAciRestCreate(ctx context.Context, d *schema.ResourceData, meta int
 		if !diags.HasError() {
 			break
 		}
-		if ok := backoff(attempts); !ok {
+		if ok := backoff(attempts, meta.(apiClient).Retries); !ok {
 			return diags
 		}
 		log.Printf("[ERROR] Failed to create object: %s, retries: %v", diags[0].Summary, attempts)
@@ -190,7 +190,7 @@ func resourceAciRestUpdate(ctx context.Context, d *schema.ResourceData, meta int
 		if !diags.HasError() {
 			break
 		}
-		if ok := backoff(attempts); !ok {
+		if ok := backoff(attempts, meta.(apiClient).Retries); !ok {
 			return diags
 		}
 		log.Printf("[ERROR] Failed to update object: %s, retries: %v", diags[0].Summary, attempts)
@@ -212,7 +212,7 @@ func resourceAciRestDelete(ctx context.Context, d *schema.ResourceData, meta int
 		if !diags.HasError() {
 			break
 		}
-		if ok := backoff(attempts); !ok {
+		if ok := backoff(attempts, meta.(apiClient).Retries); !ok {
 			return diags
 		}
 		log.Printf("[ERROR] Failed to delete object: %s, retries: %v", diags[0].Summary, attempts)
