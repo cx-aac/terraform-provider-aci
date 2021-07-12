@@ -26,6 +26,12 @@ func TestAccAciRest_tenant(t *testing.T) {
 				),
 			},
 			{
+				ResourceName:      "aci_rest.fvTenant",
+				ImportState:       true,
+				ImportStateId:     "fvTenant:uni/tn-" + name,
+				ImportStateVerify: true,
+			},
+			{
 				Config: testAccAciRestConfig_tenant(name, "Updated description"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAciRestObject("aci_rest.fvTenant"),
@@ -48,6 +54,12 @@ func TestAccAciRest_connPref(t *testing.T) {
 				),
 			},
 			{
+				ResourceName:      "aci_rest.mgmtConnectivityPrefs",
+				ImportState:       true,
+				ImportStateId:     "mgmtConnectivityPrefs:uni/fabric/connectivityPrefs",
+				ImportStateVerify: true,
+			},
+			{
 				Config: testAccAciRestConfig_connPref("inband"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAciRestObject("aci_rest.mgmtConnectivityPrefs"),
@@ -68,6 +80,12 @@ func TestAccAciRest_noContent(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckAciRestObject("aci_rest.mgmtConnectivityPrefs"),
 				),
+			},
+			{
+				ResourceName:      "aci_rest.mgmtConnectivityPrefs",
+				ImportState:       true,
+				ImportStateId:     "mgmtConnectivityPrefs:uni/fabric/connectivityPrefs",
+				ImportStateVerify: true,
 			},
 		},
 	})

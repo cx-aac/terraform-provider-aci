@@ -8,11 +8,42 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+func preparePayload(className string, inputMap map[string]string, children []interface{}) (*container.Container, error) {
+	cont := container.New()
+	cont.Object(className)
+	cont.Object(className, "attributes")
+
+	for attr, value := range inputMap {
+		cont.Set(value, className, "attributes", attr)
+	}
+	cont.Array(className, "children")
+	for _, child := range children {
+		childMap := child.(map[string]interface{})
+		childClassName := childMap["class_name"].(string)
+		childContent := childMap["content"].(map[string]string)
+
+		childCont := container.New()
+		childCont.Object(childClassName)
+		childCont.Object(childClassName, "attributes")
+
+		for attr, value := range childContent {
+			childCont.Set(value, childClassName, "attributes", attr)
+		}
+		cont.ArrayAppend(childCont.Data(), className, "children")
+	}
+	return cont, nil
+}
+
 func ApicRest(d *schema.ResourceData, meta interface{}, method string, children bool) (*container.Container, diag.Diagnostics) {
 	aciClient := meta.(apiClient).Client
 	path := "/api/mo/" + d.Get("dn").(string) + ".json"
-	if method == "GET" && children {
-		path += "?rsp-subtree=children"
+	className := d.Get("class_name").(string)
+	if method == "GET" {
+		if children {
+			path += "?rsp-subtree=children"
+		} else if !containsString(FullClasses, className) {
+			path += "?rsp-prop-include=config-only"
+		}
 	}
 	var cont *container.Container = nil
 	var err error
@@ -20,8 +51,6 @@ func ApicRest(d *schema.ResourceData, meta interface{}, method string, children 
 	if method == "POST" {
 		content := d.Get("content")
 		contentStrMap := toStrMap(content.(map[string]interface{}))
-
-		className := d.Get("class_name").(string)
 
 		childrenSet := make([]interface{}, 0, 1)
 

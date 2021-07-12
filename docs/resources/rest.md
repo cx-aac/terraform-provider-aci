@@ -76,4 +76,10 @@ Optional:
 - **class_name** (String) Class name of child object.
 - **content** (Map of String) Map of key-value pairs which represents the attributes for the child object.
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+terraform import aci_rest.fvTenant fvTenant:uni/tn-EXAMPLE_TENANT
+```
