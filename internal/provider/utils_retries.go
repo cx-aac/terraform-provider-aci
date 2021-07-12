@@ -6,10 +6,6 @@ import (
 	"time"
 )
 
-const Factor = 3
-const MinDelay = 4 * time.Second
-const MaxDelay = 60 * time.Second
-
 func backoff(attempts int, maxRetries int) bool {
 	if attempts > maxRetries {
 		return false

@@ -2,10 +2,11 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/ciscoecosystem/aci-go-client/container"
-	"github.com/ciscoecosystem/aci-go-client/models"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -18,6 +19,9 @@ func resourceAciRest() *schema.Resource {
 		UpdateContext: resourceAciRestUpdate,
 		ReadContext:   resourceAciRestRead,
 		DeleteContext: resourceAciRestDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: resourceAciRestImport,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -42,6 +46,15 @@ func resourceAciRest() *schema.Resource {
 				Description: "Map of key-value pairs those needed to be passed to the Model object as parameters. Make sure the key name matches the name with the object parameter in ACI.",
 				Optional:    true,
 				Computed:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					content := d.Get("content")
+					contentStrMap := toStrMap(content.(map[string]interface{}))
+					key := strings.Split(k, ".")[1]
+					if _, ok := contentStrMap[key]; ok {
+						return false
+					}
+					return true
+				},
 			},
 			"child": {
 				Type:        schema.TypeSet,
@@ -81,13 +94,23 @@ func getAciRest(d *schema.ResourceData, c *container.Container) diag.Diagnostics
 	content := d.Get("content")
 	contentStrMap := toStrMap(content.(map[string]interface{}))
 	newContent := make(map[string]interface{})
+	restContent, ok := c.Search("imdata", className, "attributes").Index(0).Data().(map[string]interface{})
+
+	if !ok {
+		return diag.Errorf("Failed to retrieve REST payload for class: %s.", className)
+	}
+
+	for attr, value := range restContent {
+		// Ignore certain attributes
+		if !containsString(IgnoreAttr, attr) {
+			newContent[attr] = value.(string)
+		}
+	}
 
 	for attr, value := range contentStrMap {
-		// Do not read/update 'childAction' attribute
-		if attr == "childAction" {
+		// Do not read/update write-only attributes, eg. 'childAction'
+		if containsString(WriteOnlyAttr, attr) {
 			newContent[attr] = value
-		} else {
-			newContent[attr] = models.StripQuotes(models.StripSquareBrackets(c.Search("imdata", className, "attributes", attr).String()))
 		}
 	}
 	d.Set("content", newContent)
@@ -221,4 +244,25 @@ func resourceAciRestDelete(ctx context.Context, d *schema.ResourceData, meta int
 	d.SetId("")
 	log.Printf("[DEBUG] %s: Destroy finished successfully", d.Id())
 	return nil
+}
+
+func resourceAciRestImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	log.Printf("[DEBUG] %s: Beginning Import", d.Id())
+
+	parts := strings.SplitN(d.Id(), ":", 2)
+
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return nil, fmt.Errorf("Unexpected format of ID (%s), expected class_name:dn", d.Id())
+	}
+
+	d.Set("dn", parts[1])
+	d.Set("class_name", parts[0])
+	d.SetId(parts[1])
+
+	if diags := resourceAciRestReadHelper(ctx, d, meta, true); diags.HasError() {
+		return nil, fmt.Errorf("Could not read object when importing: %s", diags[0].Summary)
+	}
+
+	log.Printf("[DEBUG] %s: Import finished successfully", d.Id())
+	return []*schema.ResourceData{d}, nil
 }

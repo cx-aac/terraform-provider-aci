@@ -1,9 +1,5 @@
 package provider
 
-import (
-	"github.com/ciscoecosystem/aci-go-client/container"
-)
-
 func toStrMap(inputMap map[string]interface{}) map[string]string {
 	rt := make(map[string]string)
 	for key, value := range inputMap {
@@ -13,28 +9,11 @@ func toStrMap(inputMap map[string]interface{}) map[string]string {
 	return rt
 }
 
-func preparePayload(className string, inputMap map[string]string, children []interface{}) (*container.Container, error) {
-	cont := container.New()
-	cont.Object(className)
-	cont.Object(className, "attributes")
-
-	for attr, value := range inputMap {
-		cont.Set(value, className, "attributes", attr)
-	}
-	cont.Array(className, "children")
-	for _, child := range children {
-		childMap := child.(map[string]interface{})
-		childClassName := childMap["class_name"].(string)
-		childContent := childMap["content"].(map[string]string)
-
-		childCont := container.New()
-		childCont.Object(childClassName)
-		childCont.Object(childClassName, "attributes")
-
-		for attr, value := range childContent {
-			childCont.Set(value, childClassName, "attributes", attr)
+func containsString(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
 		}
-		cont.ArrayAppend(childCont.Data(), className, "children")
 	}
-	return cont, nil
+	return false
 }
