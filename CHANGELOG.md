@@ -1,3 +1,8 @@
+## 0.2.1
+
+- Add terraform annotation to objects by default
+- Add option to mock API calls for troubleshooting purposes
+
 ## 0.2.0
 
 - Add import support to `aci_rest` resource
