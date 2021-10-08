@@ -188,6 +188,11 @@ func resourceAciRestReadHelper(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceAciRestCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if meta.(apiClient).IsMock {
+		d.SetId(d.Get("dn").(string))
+		return nil
+	}
+
 	log.Printf("[DEBUG] %s: Beginning Create", d.Id())
 
 	for attempts := 0; ; attempts++ {
@@ -206,6 +211,10 @@ func resourceAciRestCreate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceAciRestUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if meta.(apiClient).IsMock {
+		return nil
+	}
+
 	log.Printf("[DEBUG] %s: Beginning Update", d.Id())
 
 	for attempts := 0; ; attempts++ {
@@ -224,10 +233,19 @@ func resourceAciRestUpdate(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func resourceAciRestRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if meta.(apiClient).IsMock {
+		return nil
+	}
+
 	return resourceAciRestReadHelper(ctx, d, meta, false)
 }
 
 func resourceAciRestDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	if meta.(apiClient).IsMock {
+		d.SetId("")
+		return nil
+	}
+
 	log.Printf("[DEBUG] %s: Beginning Destroy", d.Id())
 
 	for attempts := 0; ; attempts++ {

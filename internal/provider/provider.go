@@ -97,6 +97,17 @@ func New(version string) func() *schema.Provider {
 					},
 					Description: "Number of retries for REST API calls. This can also be set as the ACI_RETRIES environment variable. Defaults to `3`.",
 				},
+				"mock": {
+					Type:     schema.TypeBool,
+					Optional: true,
+					DefaultFunc: func() (interface{}, error) {
+						if v := os.Getenv("ACI_MOCK"); v != "" {
+							return strconv.ParseBool(v)
+						}
+						return false, nil
+					},
+					Description: "Only mock API calls. This is mainly for troubleshooting/debugging purposes. This can also be set as the ACI_MOCK environment variable. Defaults to `false`.",
+				},
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"aci_rest": dataSourceAciRest(),
@@ -121,6 +132,7 @@ type apiClient struct {
 	Certname   string
 	ProxyUrl   string
 	Retries    int
+	IsMock     bool
 	Client     *client.Client
 }
 
@@ -165,6 +177,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 			Certname:   d.Get("cert_name").(string),
 			ProxyUrl:   d.Get("proxy_url").(string),
 			Retries:    d.Get("retries").(int),
+			IsMock:     d.Get("mock").(bool),
 		}
 
 		if diag := cl.Valid(); diag != nil {
