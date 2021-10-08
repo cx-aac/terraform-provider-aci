@@ -8,11 +8,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func preparePayload(className string, inputMap map[string]string, children []interface{}) (*container.Container, error) {
+func preparePayload(className string, inputMap map[string]string, children []interface{}, addAnnotation bool) (*container.Container, error) {
 	cont := container.New()
 	cont.Object(className)
 	cont.Object(className, "attributes")
 
+	if addAnnotation {
+		cont.Set("orchestrator:terraform", className, "attributes", "annotation")
+	}
 	for attr, value := range inputMap {
 		cont.Set(value, className, "attributes", attr)
 	}
@@ -26,6 +29,9 @@ func preparePayload(className string, inputMap map[string]string, children []int
 		childCont.Object(childClassName)
 		childCont.Object(childClassName, "attributes")
 
+		if addAnnotation {
+			childCont.Set("orchestrator:terraform", childClassName, "attributes", "annotation")
+		}
 		for attr, value := range childContent {
 			childCont.Set(value, childClassName, "attributes", attr)
 		}
@@ -63,7 +69,7 @@ func ApicRest(d *schema.ResourceData, meta interface{}, method string, children 
 			childrenSet = append(childrenSet, childMap)
 		}
 
-		cont, err = preparePayload(className, contentStrMap, childrenSet)
+		cont, err = preparePayload(className, contentStrMap, childrenSet, meta.(apiClient).IsAnnotation)
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}

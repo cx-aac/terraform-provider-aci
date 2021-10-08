@@ -97,6 +97,17 @@ func New(version string) func() *schema.Provider {
 					},
 					Description: "Number of retries for REST API calls. This can also be set as the ACI_RETRIES environment variable. Defaults to `3`.",
 				},
+				"annotation": {
+					Type:     schema.TypeBool,
+					Optional: true,
+					DefaultFunc: func() (interface{}, error) {
+						if v := os.Getenv("ACI_ANNOTATION"); v != "" {
+							return strconv.ParseBool(v)
+						}
+						return true, nil
+					},
+					Description: "Add `orchestrator:terraform` as annotation to all objects. This can also be set as the ACI_ANNOTATION environment variable. Defaults to `true`.",
+				},
 				"mock": {
 					Type:     schema.TypeBool,
 					Optional: true,
@@ -124,16 +135,17 @@ func New(version string) func() *schema.Provider {
 }
 
 type apiClient struct {
-	Username   string
-	Password   string
-	URL        string
-	IsInsecure bool
-	PrivateKey string
-	Certname   string
-	ProxyUrl   string
-	Retries    int
-	IsMock     bool
-	Client     *client.Client
+	Username     string
+	Password     string
+	URL          string
+	IsInsecure   bool
+	PrivateKey   string
+	Certname     string
+	ProxyUrl     string
+	Retries      int
+	IsAnnotation bool
+	IsMock       bool
+	Client       *client.Client
 }
 
 func (c apiClient) Valid() diag.Diagnostics {
@@ -169,15 +181,16 @@ func (c apiClient) getClient() interface{} {
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(c context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		cl := apiClient{
-			Username:   d.Get("username").(string),
-			Password:   d.Get("password").(string),
-			URL:        d.Get("url").(string),
-			IsInsecure: d.Get("insecure").(bool),
-			PrivateKey: d.Get("private_key").(string),
-			Certname:   d.Get("cert_name").(string),
-			ProxyUrl:   d.Get("proxy_url").(string),
-			Retries:    d.Get("retries").(int),
-			IsMock:     d.Get("mock").(bool),
+			Username:     d.Get("username").(string),
+			Password:     d.Get("password").(string),
+			URL:          d.Get("url").(string),
+			IsInsecure:   d.Get("insecure").(bool),
+			PrivateKey:   d.Get("private_key").(string),
+			Certname:     d.Get("cert_name").(string),
+			ProxyUrl:     d.Get("proxy_url").(string),
+			Retries:      d.Get("retries").(int),
+			IsAnnotation: d.Get("annotation").(bool),
+			IsMock:       d.Get("mock").(bool),
 		}
 
 		if diag := cl.Valid(); diag != nil {
