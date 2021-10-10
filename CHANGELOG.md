@@ -1,3 +1,7 @@
+## 0.2.2
+
+- Add exception for classes not supporting annotation attribute
+
 ## 0.2.1
 
 - Add terraform annotation to objects by default

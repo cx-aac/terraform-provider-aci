@@ -13,7 +13,7 @@ func preparePayload(className string, inputMap map[string]string, children []int
 	cont.Object(className)
 	cont.Object(className, "attributes")
 
-	if addAnnotation {
+	if addAnnotation && !containsString(NoAnnotationClasses, className) {
 		cont.Set("orchestrator:terraform", className, "attributes", "annotation")
 	}
 	for attr, value := range inputMap {
@@ -29,7 +29,7 @@ func preparePayload(className string, inputMap map[string]string, children []int
 		childCont.Object(childClassName)
 		childCont.Object(childClassName, "attributes")
 
-		if addAnnotation {
+		if addAnnotation && !containsString(NoAnnotationClasses, childClassName) {
 			childCont.Set("orchestrator:terraform", childClassName, "attributes", "annotation")
 		}
 		for attr, value := range childContent {
