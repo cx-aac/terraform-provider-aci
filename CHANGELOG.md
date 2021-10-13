@@ -1,3 +1,7 @@
+## 0.2.3
+
+- Do not store annotation in state
+
 ## 0.2.2
 
 - Add exception for classes not supporting annotation attribute
